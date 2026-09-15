@@ -1,0 +1,43 @@
+/* Global Background & Font Tuning */
+.main {
+    background-color: #0e1117;
+}
+
+/* Modern Card Styles */
+div[data-testid="stBlock"] {
+    border-radius: 12px;
+    border: 1px solid #1f2937;
+    padding: 1rem;
+    background-color: #111827;
+}
+
+/* Sleek Metric Cards */
+div[data-testid="stMetricValue"] {
+    font-size: 2rem !important;
+    font-weight: 700 !important;
+    color: #6366f1;
+}
+
+/* Custom Verdict Badges */
+.badge-allow {
+    background-color: #064e3b; 
+    color: #34d399; 
+    padding: 6px 14px; 
+    border-radius: 20px; 
+    font-weight: 600;
+}
+
+.badge-block {
+    background-color: #7f1d1d; 
+    color: #f87171; 
+    padding: 6px 14px; 
+    border-radius: 20px; 
+    font-weight: 600;
+}
+
+/* Button Aesthetics */
+.stButton>button {
+    border-radius: 8px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
