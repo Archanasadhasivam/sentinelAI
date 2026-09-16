@@ -1,0 +1,46 @@
+# SentinelAI policy configuration.
+# Edited from the /policy page in the UI (dry-run before it's applied), or by
+# hand — this file is hot-reloaded (re-read on every evaluation; cheap at
+# this scale, no cache invalidation bugs).
+
+# Decision thresholds on the final risk score R (0.0-1.0).
+thresholds:
+  block: 0.75   # R >= block  -> Block
+  wait: 0.45    # wait <= R < block -> Wait (hold for human review)
+                # R < wait -> Allow
+
+# R = alpha * L + (1 - alpha) * I
+# L = likelihood the event is malicious (from detectors)
+# I = impact if it IS malicious (from action severity)
+risk:
+  alpha: 0.55
+  impact_floor: 0.15   # even a "low impact" action never scores below this
+
+# Per-detector weight used when combining DetectionResult scores into L.
+# Detectors with higher weight dominate the likelihood calculation when
+# they fire (this is the "ROC weight" the report refers to).
+detector_weights:
+  prompt_injection: 1.0
+  behavioral_anomaly: 0.8
+  sensitive_data_leakage: 1.0
+  malicious_api_detection: 0.9
+
+# Impact of each action type/tool if it turns out to be malicious.
+# Note: "prompt" impact is deliberately not low (0.6) even though a raw
+# prompt hasn't *done* anything yet — a successful prompt injection is high
+# impact by nature, since if not caught here it can go on to steer arbitrary
+# downstream tool calls. This calibration lets a single strongly-corroborated
+# regex match (2+ distinct injection categories in one message) alone reach
+# the Block band even with the semantic (Groq) layer degraded/unavailable;
+# a single weaker signal lands in Wait until the semantic layer (or a human)
+# confirms it. See docs/SCOPE_DECISIONS.md.
+action_impact:
+  prompt: 0.6
+  output: 0.65
+  file_read: 0.3
+  file_write: 0.7
+  send_email: 0.85
+  run_shell: 0.95
+  fetch_url: 0.5
+  query_db: 0.6
+  default: 0.4

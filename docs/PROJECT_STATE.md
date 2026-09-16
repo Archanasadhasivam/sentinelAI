@@ -1,0 +1,58 @@
+# PROJECT_STATE
+
+Snapshot as of the end of this build session. Read this first if picking the
+project back up.
+
+## Status: **v1 complete and verified working**
+
+- Backend: 30/30 pytest tests passing. Manually smoke-tested by booting the
+  server and exercising every route (sessions, messages, events, alerts,
+  reports, policy incl. dry-run, graph, settings, WebSocket).
+- Frontend: `npm run build` passes (full TypeScript typecheck, all 9 routes
+  compile). Manually smoke-tested against the real running backend —
+  confirmed CORS works, fixtures load, pages render.
+- The two together were run simultaneously and verified to talk to each
+  other correctly (CORS preflight, WS message shapes match what each page
+  expects).
+
+## What's implemented
+See `README.md` for the full feature list and `docs/SCOPE_DECISIONS.md` for
+every deliberate simplification. In short: all four pipeline layers, all
+four detectors, the XAI trust layer, the Groq-backed agent sandbox with 6
+mock tools, the full REST API + WebSocket stream, and all 8 frontend pages
+(Overview, Playground, Monitor, Alerts, Report detail, Graph, Policy,
+Settings).
+
+## Known gaps / good next steps
+1. **No auth flow wired up.** `DEMO_USERNAME`/`DEMO_PASSWORD`/`SESSION_SECRET`
+   exist in backend config as placeholders; nothing currently checks them.
+   Add a login page + a dependency that gates the API routes.
+2. **No automated frontend tests.** Correctness was verified via typecheck +
+   manual smoke test, not Vitest/Playwright. Would be the highest-value
+   addition if this goes further.
+3. **In-memory sandbox/agent conversation state** (`app/sandbox/agent.py`'s
+   `_conversations` dict, `app/sandbox/tools.py`'s `_sandbox_state` dict)
+   resets on backend restart. Fine for a demo; would need to move to the DB
+   for anything persistent.
+4. **Injection pattern bank is a ~25-pattern seed**, not the full 400+
+   envisioned in the spec. Easy to extend — see
+   `app/detection/data/injection_patterns.json`.
+5. **No real containerized sandboxing.** All 6 tools are pure-Python mocks
+   with no actual filesystem/network/shell access to isolate in the first
+   place. If real tool execution is ever added, session isolation needs to
+   become an actual sandbox (e.g. per-session Docker container or gVisor),
+   not just a per-session in-memory dict.
+6. **Single-process deployment assumption.** The event bus is an in-process
+   `asyncio.Queue`; horizontal scaling would need a real broker (Redis/Celery,
+   as the original spec allowed for).
+
+## How to verify it still works
+```bash
+# Backend
+cd backend && source .venv/bin/activate && python -m pytest tests/ -q
+uvicorn app.main:app --reload --port 8000   # in one terminal
+
+# Frontend
+cd frontend && npm run dev                   # in another terminal
+# visit http://localhost:3000/playground and try an attack preset
+```
