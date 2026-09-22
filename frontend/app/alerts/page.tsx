@@ -47,11 +47,11 @@ export default function AlertsPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Alerts</h1>
+        <h1 className="display text-2xl font-bold tracking-wide">Alerts</h1>
         <select
           value={tier}
           onChange={(e) => setTier(e.target.value)}
-          className="rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+          className="rounded-sm border border-border bg-background px-2 py-1.5 text-sm"
         >
           <option value="">All tiers</option>
           <option value="critical">Critical (Tier 3 / Block)</option>
@@ -66,16 +66,23 @@ export default function AlertsPage() {
             <CardContent className="text-sm text-muted-foreground">No alerts yet.</CardContent>
           </Card>
         )}
-        {alerts.map((a) => (
-          <Card key={a.id} className={a.acknowledged ? "opacity-60" : ""}>
-            <CardContent className="flex items-center justify-between gap-3">
+        {alerts.map((a) => {
+          const borderClass =
+            a.tier === "critical" ? "border-l-danger" : a.tier === "warning" ? "border-l-warning" : "border-l-border";
+          return (
+            <div
+              key={a.id}
+              className={`flex items-center justify-between gap-3 border border-border border-l-[3px] ${borderClass} rounded-sm bg-surface px-4 py-3 ${
+                a.acknowledged ? "opacity-55" : ""
+              }`}
+            >
               <div className="flex items-center gap-3">
                 <Badge tone={a.tier === "critical" ? "danger" : a.tier === "warning" ? "warning" : "default"}>
                   {a.tier}
                 </Badge>
                 <div>
                   <div className="text-sm">{a.message}</div>
-                  <div className="text-xs text-muted-foreground">{new Date(a.created_at).toLocaleString()}</div>
+                  <div className="text-xs text-muted-foreground mono">{new Date(a.created_at).toLocaleString()}</div>
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -85,15 +92,15 @@ export default function AlertsPage() {
                 {!a.acknowledged && (
                   <button
                     onClick={() => acknowledge(a.id)}
-                    className="flex items-center gap-1 text-xs rounded-md border border-border px-2 py-1 hover:bg-surface-hover"
+                    className="flex items-center gap-1 text-xs rounded-sm border border-border px-2 py-1 hover:bg-surface-hover"
                   >
                     <Check size={12} /> Acknowledge
                   </button>
                 )}
               </div>
-            </CardContent>
-          </Card>
-        ))}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

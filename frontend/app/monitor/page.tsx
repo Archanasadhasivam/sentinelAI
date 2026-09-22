@@ -67,12 +67,12 @@ export default function MonitorPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Monitor</h1>
+        <h1 className="display text-2xl font-bold tracking-wide">Monitor</h1>
         <div className="flex gap-2">
           <select
             value={eventTypeFilter}
             onChange={(e) => setEventTypeFilter(e.target.value)}
-            className="rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+            className="rounded-sm border border-border bg-background px-2 py-1.5 text-sm"
           >
             <option value="">All event types</option>
             <option value="prompt">Prompt</option>
@@ -83,7 +83,7 @@ export default function MonitorPage() {
           <select
             value={decisionFilter}
             onChange={(e) => setDecisionFilter(e.target.value)}
-            className="rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+            className="rounded-sm border border-border bg-background px-2 py-1.5 text-sm"
           >
             <option value="">All verdicts</option>
             <option value="allow">Allow</option>
@@ -97,7 +97,7 @@ export default function MonitorPage() {
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-xs text-muted-foreground uppercase border-b border-border">
+              <thead className="text-xs text-muted-foreground border-b border-border">
                 <tr>
                   <th className="text-left px-3 py-2">Time</th>
                   <th className="text-left px-3 py-2">Session</th>
@@ -134,7 +134,7 @@ export default function MonitorPage() {
                     <td className="px-3 py-2">
                       {e.verdict?.id && (
                         <Link href={`/reports/${e.verdict.id}`} className="text-xs text-primary hover:underline">
-                          Report →
+                          Report
                         </Link>
                       )}
                     </td>

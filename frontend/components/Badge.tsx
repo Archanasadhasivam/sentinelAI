@@ -5,27 +5,38 @@ function cn(...classes: (string | false | undefined)[]) {
   return classes.filter(Boolean).join(" ");
 }
 
+const DOT_CLASSES: Record<string, string> = {
+  default: "bg-muted-foreground",
+  success: "bg-success",
+  warning: "bg-warning",
+  danger: "bg-danger",
+  primary: "bg-primary",
+};
+
+const TEXT_CLASSES: Record<string, string> = {
+  default: "text-muted-foreground border-border",
+  success: "text-success border-success/35",
+  warning: "text-warning border-warning/35",
+  danger: "text-danger border-danger/35",
+  primary: "text-primary border-primary/35",
+};
+
 export function Badge({
   className,
   tone = "default",
   ...props
 }: HTMLAttributes<HTMLSpanElement> & { tone?: "default" | "success" | "warning" | "danger" | "primary" }) {
-  const toneClasses: Record<string, string> = {
-    default: "bg-surface-hover text-muted-foreground border-border",
-    success: "bg-success/10 text-success border-success/30",
-    warning: "bg-warning/10 text-warning border-warning/30",
-    danger: "bg-danger/10 text-danger border-danger/30",
-    primary: "bg-primary/10 text-primary border-primary/30",
-  };
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium",
-        toneClasses[tone],
+        "inline-flex items-center gap-1.5 rounded-sm border bg-surface px-1.5 py-0.5 text-xs font-medium",
+        TEXT_CLASSES[tone],
         className
       )}
-      {...props}
-    />
+    >
+      <span className={cn("inline-block w-1.5 h-1.5 rounded-full shrink-0", DOT_CLASSES[tone])} aria-hidden />
+      <span {...props} />
+    </span>
   );
 }
 
@@ -43,7 +54,7 @@ const DECISION_TONE: Record<Decision, "success" | "warning" | "danger"> = {
 
 export function VerdictBadge({ decision, pending }: { decision?: Decision; pending?: boolean }) {
   if (pending || !decision) {
-    return <Badge tone="default">Pending…</Badge>;
+    return <Badge tone="default">Pending</Badge>;
   }
   return <Badge tone={DECISION_TONE[decision]}>{DECISION_LABEL[decision]}</Badge>;
 }

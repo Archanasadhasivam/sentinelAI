@@ -22,16 +22,17 @@ export function AttackPresetMenu({ onSelect }: { onSelect: (text: string) => voi
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm hover:bg-surface-hover"
+        className="flex items-center gap-1.5 rounded-sm border border-border px-3 py-1.5 text-sm hover:bg-surface-hover"
       >
         <Zap size={14} className="text-warning" />
         Attack presets
       </button>
       {open && (
-        <div className="absolute right-0 mt-1 w-96 max-h-96 overflow-y-auto rounded-md border border-border bg-surface shadow-lg z-30">
+        <div className="absolute right-0 mt-1 w-96 max-h-96 overflow-y-auto rounded-sm border border-border bg-surface z-30">
           {Object.entries(grouped).map(([category, items]) => (
             <div key={category}>
-              <div className="px-3 py-1.5 text-[10px] uppercase tracking-wide text-muted-foreground bg-surface-hover sticky top-0">
+              <div className="flex items-center gap-2 px-3 py-1.5 text-[11px] text-muted-foreground bg-surface-hover sticky top-0">
+                <span className="inline-block w-[3px] h-3 bg-primary/70 shrink-0" aria-hidden />
                 {category.replaceAll("_", " ")}
               </div>
               {items.map((item) => (

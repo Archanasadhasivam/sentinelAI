@@ -58,37 +58,34 @@ export default function OverviewPage() {
     : 0;
 
   const statCards = [
-    { label: "Events today", value: counters.total, icon: Activity, classes: "bg-primary/10 text-primary" },
-    { label: "Blocked", value: counters.blocked, icon: ShieldX, classes: "bg-danger/10 text-danger" },
-    { label: "Held for review", value: counters.waiting, icon: ShieldAlert, classes: "bg-warning/10 text-warning" },
-    { label: "Allowed", value: counters.allowed, icon: ShieldCheck, classes: "bg-success/10 text-success" },
+    { label: "Events today", value: counters.total, icon: Activity, dot: "bg-primary" },
+    { label: "Blocked", value: counters.blocked, icon: ShieldX, dot: "bg-danger" },
+    { label: "Held for review", value: counters.waiting, icon: ShieldAlert, dot: "bg-warning" },
+    { label: "Allowed", value: counters.allowed, icon: ShieldCheck, dot: "bg-success" },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-semibold">Overview</h1>
+        <h1 className="display text-2xl font-bold tracking-wide">Overview</h1>
         <p className="text-sm text-muted-foreground">
           Live posture of the SentinelAI middleware gateway.{" "}
           <Link href="/playground" className="text-primary hover:underline">
-            Open the Agent Sandbox →
+            Open the Agent Sandbox
           </Link>
         </p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {statCards.map(({ label, value, icon: Icon, classes }) => (
-          <Card key={label}>
-            <CardContent className="flex items-center gap-3">
-              <div className={`rounded-md p-2 ${classes}`}>
-                <Icon size={18} />
-              </div>
-              <div>
-                <div className="text-2xl font-semibold mono">{value}</div>
-                <div className="text-xs text-muted-foreground">{label}</div>
-              </div>
-            </CardContent>
-          </Card>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {statCards.map(({ label, value, icon: Icon, dot }) => (
+          <div key={label} className="rounded-md border border-border bg-surface p-3.5">
+            <div className="flex items-center justify-between mb-2">
+              <span className={`inline-block w-1.5 h-1.5 rounded-full ${dot}`} aria-hidden />
+              <Icon size={15} className="text-muted-foreground" />
+            </div>
+            <div className="display text-3xl font-bold leading-none">{value}</div>
+            <div className="text-xs text-muted-foreground mt-1.5">{label}</div>
+          </div>
         ))}
       </div>
 
@@ -132,7 +129,7 @@ export default function OverviewPage() {
               </div>
             ))}
             <Link href="/alerts" className="block text-xs text-primary hover:underline pt-1">
-              View all alerts →
+              View all alerts
             </Link>
           </CardContent>
         </Card>

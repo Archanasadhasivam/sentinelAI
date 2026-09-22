@@ -46,10 +46,9 @@ export default function ReportPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-4">
       <div>
-        <h1 className="text-lg font-semibold">Trust Report</h1>
-        <p className="text-xs text-muted-foreground mono">
-          verdict {report.verdict_id.slice(0, 8)} · event {report.event_id.slice(0, 8)} ·{" "}
-          {new Date(report.created_at).toLocaleString()}
+        <h1 className="display text-2xl font-bold tracking-wide">Trust report</h1>
+        <p className="text-xs text-muted-foreground mono mt-1">
+          verdict {report.verdict_id.slice(0, 8)}, event {report.event_id.slice(0, 8)}, {new Date(report.created_at).toLocaleString()}
         </p>
       </div>
       <TrustReportCard

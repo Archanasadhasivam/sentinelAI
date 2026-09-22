@@ -120,7 +120,7 @@ export default function PlaygroundPage() {
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-4">
       <div className="flex flex-col h-[calc(100vh-6.5rem)]">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-lg font-semibold">Agent Sandbox</h1>
+          <h1 className="display text-2xl font-bold tracking-wide">Agent Sandbox</h1>
           <div className="flex items-center gap-2">
             {degraded && <Badge tone="warning">No Groq key — degraded mode</Badge>}
             <AttackPresetMenu onSelect={(text) => send(text)} />
@@ -179,7 +179,7 @@ export default function PlaygroundPage() {
       </div>
 
       <div className="h-[calc(100vh-6.5rem)]">
-        <EventStreamPanel events={events} title="Interception → Detection → Verdict" />
+        <EventStreamPanel events={events} title="Interception, detection, verdict" />
       </div>
     </div>
   );

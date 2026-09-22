@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 import type { PolicyConfig } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/Card";
 import { Badge } from "@/components/Badge";
-import { PlayCircle, Save } from "lucide-react";
+import { PlayCircle, Save, ArrowRight } from "lucide-react";
 
 function NumberField({
   label, value, onChange, min = 0, max = 1, step = 0.01,
@@ -69,18 +69,18 @@ export default function PolicyPage() {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-lg font-semibold">Policy</h1>
+          <h1 className="display text-2xl font-bold tracking-wide">Policy</h1>
           <div className="flex gap-2">
             <button
               onClick={runDryRun}
-              className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm hover:bg-surface-hover"
+              className="flex items-center gap-1.5 rounded-sm border border-border px-3 py-1.5 text-sm hover:bg-surface-hover"
             >
               <PlayCircle size={14} /> Dry run (last 25 events)
             </button>
             <button
               onClick={save}
               disabled={saving}
-              className="flex items-center gap-1.5 rounded-md bg-primary text-primary-foreground px-3 py-1.5 text-sm disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-sm bg-primary text-primary-foreground px-3 py-1.5 text-sm disabled:opacity-50"
             >
               <Save size={14} /> {saving ? "Saving…" : saved ? "Saved" : "Save"}
             </button>
@@ -167,11 +167,14 @@ export default function PolicyPage() {
                 </div>
                 <div className="space-y-1.5 max-h-[70vh] overflow-y-auto">
                   {dryRun.results.map((r) => (
-                    <div key={r.event_id} className={`flex items-center justify-between text-xs rounded-md border p-2 ${r.changed ? "border-warning/40 bg-warning/5" : "border-border"}`}>
-                      <span className="mono text-muted-foreground">{r.event_id.slice(0, 8)} · {r.event_type}</span>
+                    <div key={r.event_id} className={`flex items-center justify-between text-xs rounded-sm border p-2 ${r.changed ? "border-warning/40 bg-warning/5" : "border-border"}`}>
+                      <span className="flex items-center gap-2 mono text-muted-foreground">
+                        <Badge tone="default">{r.event_type}</Badge>
+                        {r.event_id.slice(0, 8)}
+                      </span>
                       <span className="flex items-center gap-2">
                         <Badge>{r.original_decision}</Badge>
-                        {r.changed && <span>→</span>}
+                        {r.changed && <ArrowRight size={12} className="text-muted-foreground" />}
                         {r.changed && <Badge tone={r.new_decision === "block" ? "danger" : r.new_decision === "wait" ? "warning" : "success"}>{r.new_decision}</Badge>}
                         <span className="mono">{r.new_risk_score.toFixed(2)}</span>
                       </span>

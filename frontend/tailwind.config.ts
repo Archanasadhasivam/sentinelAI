@@ -25,11 +25,12 @@ const config: Config = {
       fontFamily: {
         mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "monospace"],
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "Arial Narrow", "sans-serif"],
       },
       borderRadius: {
-        lg: "0.75rem",
-        md: "0.5rem",
-        sm: "0.375rem",
+        lg: "0.5rem",
+        md: "0.25rem",
+        sm: "0.125rem",
       },
     },
   },

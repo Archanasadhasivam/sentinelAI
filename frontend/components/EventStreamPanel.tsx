@@ -12,10 +12,17 @@ const EVENT_TYPE_LABEL: Record<string, string> = {
   output: "Output",
 };
 
+const VERDICT_BORDER: Record<string, string> = {
+  allow: "border-l-success",
+  wait: "border-l-warning",
+  block: "border-l-danger",
+  pending: "border-l-border",
+};
+
 export function EventStreamPanel({
   events,
   title = "Live event stream",
-  emptyLabel = "No events yet — send a message to see the pipeline light up.",
+  emptyLabel = "No events yet. Send a message to see the pipeline light up.",
 }: {
   events: SentinelEvent[];
   title?: string;
@@ -26,10 +33,15 @@ export function EventStreamPanel({
       <CardHeader>
         <CardTitle>{title}</CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 overflow-y-auto space-y-2 max-h-[70vh]">
+      <CardContent className="flex-1 overflow-y-auto space-y-1.5 max-h-[70vh] scanlines">
         {events.length === 0 && <div className="text-sm text-muted-foreground">{emptyLabel}</div>}
         {events.map((e) => (
-          <div key={e.id} className="rounded-md border border-border p-2.5 text-sm">
+          <div
+            key={e.id}
+            className={`border-l-[3px] bg-surface-hover/40 pl-3 pr-2.5 py-2 text-sm ${
+              VERDICT_BORDER[e.verdict?.decision ?? "pending"]
+            }`}
+          >
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <Badge tone="default">{EVENT_TYPE_LABEL[e.event_type] ?? e.event_type}</Badge>
@@ -51,12 +63,12 @@ export function EventStreamPanel({
             )}
             {e.verdict && (
               <div className="mt-1.5 flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">
-                  R={e.verdict.risk_score.toFixed(2)} · {e.verdict.dominant_factor}
+                <span className="mono text-muted-foreground">
+                  R {e.verdict.risk_score.toFixed(2)}, driven by {e.verdict.dominant_factor}
                 </span>
                 {e.verdict.id && (
                   <Link href={`/reports/${e.verdict.id}`} className="text-primary hover:underline">
-                    Full report →
+                    Full report
                   </Link>
                 )}
               </div>

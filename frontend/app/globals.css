@@ -1,51 +1,91 @@
+@import url("https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-display: "Big Shoulders Display", "Arial Narrow", sans-serif;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
 
-  /* Dark theme (default) — security/ops-dashboard aesthetic (build spec §5.1) */
-  --background: 222 28% 7%;
-  --surface: 222 24% 11%;
-  --surface-hover: 222 22% 15%;
-  --border: 222 16% 20%;
-  --foreground: 210 20% 92%;
-  --muted-foreground: 215 14% 60%;
-  --primary: 199 89% 58%;
-  --primary-foreground: 222 28% 7%;
-  --success: 142 71% 45%;
-  --warning: 38 92% 55%;
-  --danger: 0 84% 60%;
+  /* Dark theme (default) — a watch-room reads its instruments in warm,
+     low light: brown-black panels, an amber signal lamp for the primary
+     accent, moss/rust/ember for the three verdict tiers. Deliberately no
+     blue anywhere in the system. */
+  --background: 26 18% 8%;
+  --surface: 30 22% 11%;
+  --surface-hover: 32 21% 14%;
+  --border: 36 21% 19%;
+  --foreground: 39 42% 88%;
+  --muted-foreground: 37 18% 59%;
+  --primary: 37 76% 56%;
+  --primary-foreground: 26 18% 8%;
+  --success: 86 28% 49%;
+  --warning: 28 69% 52%;
+  --danger: 9 62% 47%;
 }
 
 :root[data-theme="light"] {
-  --background: 0 0% 100%;
-  --surface: 210 20% 98%;
-  --surface-hover: 210 20% 94%;
-  --border: 214 15% 88%;
-  --foreground: 222 28% 10%;
-  --muted-foreground: 215 14% 40%;
-  --primary: 199 89% 42%;
-  --primary-foreground: 0 0% 100%;
-  --success: 142 65% 32%;
-  --warning: 32 90% 40%;
-  --danger: 0 72% 45%;
+  /* Daylight in the same room: paper and ink, not white-and-blue. */
+  --background: 41 54% 93%;
+  --surface: 42 100% 98%;
+  --surface-hover: 42 46% 89%;
+  --border: 43 40% 78%;
+  --foreground: 35 36% 10%;
+  --muted-foreground: 37 20% 40%;
+  --primary: 36 72% 41%;
+  --primary-foreground: 42 100% 98%;
+  --success: 100 40% 34%;
+  --warning: 30 73% 41%;
+  --danger: 8 64% 39%;
 }
 
 * {
   border-color: hsl(var(--border));
 }
 
+html {
+  scroll-padding-top: env(safe-area-inset-top, 0px);
+}
+
 body {
   background: hsl(var(--background));
   color: hsl(var(--foreground));
   font-family: var(--font-sans);
+  position: relative;
 }
+
+/* A quiet grain over the whole app — the one bit of texture, everywhere,
+   instead of decoration on any one element. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+#__next, main, header, footer { position: relative; z-index: 1; }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 8px; }
 
 .mono { font-family: var(--font-mono); }
+.display { font-family: var(--font-display); letter-spacing: 0.01em; }
+
+/* Faint horizontal scanlines — used only on the live-signal surfaces
+   (event ticker, gauge) to read as an instrument, not applied globally. */
+.scanlines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    hsla(var(--foreground) / 0.025) 0px,
+    hsla(var(--foreground) / 0.025) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}

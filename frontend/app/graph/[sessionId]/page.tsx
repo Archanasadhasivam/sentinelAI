@@ -43,7 +43,7 @@ export default function GraphPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-lg font-semibold">Tool-call graph</h1>
+        <h1 className="display text-2xl font-bold tracking-wide">Tool-call graph</h1>
         <p className="text-xs text-muted-foreground mono">session {params.sessionId.slice(0, 8)}</p>
       </div>
       <Card>
@@ -93,7 +93,7 @@ export default function GraphPage() {
                 return (
                   <g key={n.id}>
                     <circle cx={p.x} cy={p.y} r={28} fill="hsl(var(--surface))" stroke="hsl(var(--primary))" strokeWidth={2} />
-                    <text x={p.x} y={p.y - 2} textAnchor="middle" fontSize={11} fill="hsl(var(--foreground))" fontWeight={600}>
+                    <text x={p.x} y={p.y - 2} textAnchor="middle" fontSize={11} fill="hsl(var(--foreground))" fontWeight={600} fontFamily="var(--font-display)">
                       {n.label}
                     </text>
                     <text x={p.x} y={p.y + 12} textAnchor="middle" fontSize={9} fill="hsl(var(--muted-foreground))">

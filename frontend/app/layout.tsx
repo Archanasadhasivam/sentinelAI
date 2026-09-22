@@ -12,7 +12,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <Nav />
-        <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
+        <main className="pl-[76px] md:pl-[152px]">
+          <div className="mx-auto max-w-6xl px-5 md:px-8 py-8">{children}</div>
+        </main>
       </body>
     </html>
   );

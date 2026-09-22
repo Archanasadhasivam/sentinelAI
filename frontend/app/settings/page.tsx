@@ -16,7 +16,7 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-xl space-y-4">
-      <h1 className="text-lg font-semibold">Settings</h1>
+      <h1 className="display text-2xl font-bold tracking-wide">Settings</h1>
 
       <Card>
         <CardHeader><CardTitle>Backend connection</CardTitle></CardHeader>
