@@ -9,6 +9,12 @@ in context (catches paraphrased/novel injections regex misses), plus
 llama-guard-4 as a second opinion. Degrades gracefully to Layer A alone if
 Groq is unavailable/rate-limited (a "semantic layer degraded" flag is
 returned in metadata so the UI can show the badge from §7.5).
+
+Layer C (fine-tuned classifier): an XLM-R sequence classifier
+(app/ml/xlmr_classifier.py) trained specifically for BENIGN/PROMPT_INJECTION.
+Same graceful-degradation contract as Layer B — if no fine-tuned checkpoint
+has been trained/configured yet, this layer contributes nothing and the
+detector behaves exactly as it did before this layer existed.
 """
 import json
 import re
@@ -17,6 +23,7 @@ from pathlib import Path
 from app.config import get_settings
 from app.detection.base import extract_text
 from app.groq_client import groq_client
+from app.ml.xlmr_classifier import xlmr_classifier
 from app.schemas import DetectionResult, Evidence, InterceptedEvent
 
 settings = get_settings()
@@ -108,7 +115,23 @@ class PromptInjectionDetector:
                 except (json.JSONDecodeError, ValueError):
                     pass
 
-        score = max(regex_score, semantic_score)
+        xlmr_score = 0.0
+        xlmr_available = False
+        if text.strip():
+            xlmr_result = await xlmr_classifier.classify(text[:4000])
+            xlmr_available = xlmr_result.available
+            if xlmr_result.available and xlmr_result.label == "PROMPT_INJECTION":
+                xlmr_score = xlmr_result.confidence
+                evidence.append(
+                    Evidence(
+                        detector=self.name,
+                        label="classifier:xlmr",
+                        detail=f"fine-tuned XLM-R classifier flagged this (confidence {xlmr_result.confidence:.2f})",
+                        weight=0.9,
+                    )
+                )
+
+        score = max(regex_score, semantic_score, xlmr_score)
         triggered = score >= 0.5
 
         return DetectionResult(
@@ -120,6 +143,8 @@ class PromptInjectionDetector:
                 "semantic_layer_degraded": semantic_degraded,
                 "regex_score": regex_score,
                 "semantic_score": semantic_score,
+                "xlmr_layer_available": xlmr_available,
+                "xlmr_score": xlmr_score,
             },
         )
 

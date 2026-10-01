@@ -18,3 +18,8 @@ frontend/.env.local
 
 # OS
 .DS_Store
+
+# ML / XLM-R
+backend/models/
+backend/injection_dataset.csv
+backend/**/_trainer_checkpoints/

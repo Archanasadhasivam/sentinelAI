@@ -18,6 +18,12 @@ class Settings(BaseSettings):
     database_url: str = "sqlite+aiosqlite:///./sentinelai.db"
     cors_origin: str = "http://localhost:3000"
 
+    # XLM-R prompt-injection classifier (Layer C — app/ml/xlmr_classifier.py).
+    # Relative paths resolve against the backend/ directory. Absent by
+    # default: no checkpoint ships with this repo, see backend/models/README.md.
+    xlmr_model_path: str = "models/xlmr-prompt-injection"
+    xlmr_confidence_threshold: float = 0.5
+
     @property
     def groq_enabled(self) -> bool:
         return bool(self.groq_api_key) and self.groq_api_key != "gsk_your_key_here"

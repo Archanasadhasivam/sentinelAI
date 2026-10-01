@@ -1,0 +1,15 @@
+# Optional. Only needed if you want to:
+#   (a) fine-tune the XLM-R prompt-injection classifier via app/ml/train_xlmr.py, or
+#   (b) actually run inference with a fine-tuned checkpoint present (app/ml/xlmr_classifier.py).
+#
+# The main API (requirements.txt) does NOT depend on any of this and boots
+# fine without it — the classifier component detects these are missing and
+# reports itself as unavailable, exactly like the app already does when
+# GROQ_API_KEY is unset.
+#
+#   pip install -r requirements.txt -r requirements-ml.txt
+
+torch==2.4.1
+transformers==4.45.2
+pandas==2.2.3
+scikit-learn==1.5.2
