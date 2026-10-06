@@ -17,6 +17,9 @@ os.environ.setdefault("SANDBOX_MODE", "memory")
 # flaky. Environment variables take priority over .env in pydantic-settings,
 # so an empty key here forces every Groq-backed layer into degraded mode.
 os.environ["GROQ_API_KEY"] = ""
+# Alerts: never contact a real SIEM or need Redis during tests.
+os.environ["SIEM_WEBHOOK_URL"] = ""
+os.environ["ALERT_QUEUE_MODE"] = "eager"
 
 
 @pytest.fixture(scope="session")

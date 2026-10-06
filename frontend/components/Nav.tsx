@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, MessagesSquare, Activity, Bell, Sliders, Settings } from "lucide-react";
+import { LayoutDashboard, MessagesSquare, Activity, Bell, Sliders, Settings, LogOut } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
+import { useAuth } from "./AuthProvider";
 
 const LINKS = [
   { href: "/", label: "Overview", icon: LayoutDashboard },
@@ -28,6 +29,7 @@ function BeaconMark() {
 
 export function Nav() {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
 
   return (
     <header className="fixed inset-y-0 left-0 z-20 w-[76px] md:w-[152px] border-r border-border bg-surface flex flex-col">
@@ -61,6 +63,22 @@ export function Nav() {
           );
         })}
       </nav>
+
+      {user && (
+        <div className="px-3 md:px-5 py-3 border-t border-border space-y-2">
+          <p className="hidden md:block text-[11px] text-muted-foreground truncate" title={user.email}>
+            {user.email}
+          </p>
+          <button
+            onClick={logout}
+            title="Log out"
+            className="flex items-center gap-2 text-[11px] md:text-sm text-muted-foreground hover:text-foreground"
+          >
+            <LogOut size={16} strokeWidth={1.75} />
+            <span className="hidden md:inline">Log out</span>
+          </button>
+        </div>
+      )}
 
       <div className="p-3 border-t border-border flex justify-center md:justify-start">
         <ThemeToggle />

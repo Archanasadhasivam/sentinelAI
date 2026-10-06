@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import type { PolicyConfig } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/Card";
 import { Badge } from "@/components/Badge";
+import { BehavioralModelCard } from "@/components/BehavioralModelCard";
 import { PlayCircle, Save, ArrowRight } from "lucide-react";
 
 function NumberField({
@@ -153,7 +154,9 @@ export default function PolicyPage() {
         </Card>
       </div>
 
-      <div>
+      <div className="space-y-4">
+        <BehavioralModelCard />
+
         <Card>
           <CardHeader><CardTitle>Dry-run results</CardTitle></CardHeader>
           <CardContent className="space-y-2">

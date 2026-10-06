@@ -19,9 +19,22 @@ export class ApiError extends Error {
   }
 }
 
+/** Routes that must never trigger the "go to login" redirect. */
+const AUTH_PATHS = ["/api/auth/"];
+export const PUBLIC_PAGES = ["/login", "/signup"];
+
+function redirectToLogin() {
+  if (typeof window === "undefined") return;
+  if (PUBLIC_PAGES.includes(window.location.pathname)) return;
+  const next = window.location.pathname + window.location.search;
+  window.location.assign(`/login?next=${encodeURIComponent(next)}`);
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
+    // Send the httpOnly login cookie with every request (item 5).
+    credentials: "include",
     headers: { "Content-Type": "application/json", ...(init?.headers || {}) },
   });
   if (!res.ok) {
@@ -34,12 +47,42 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {
       /* ignore parse errors */
     }
+    if (res.status === 401 && !AUTH_PATHS.some((p) => path.startsWith(p))) {
+      redirectToLogin();
+    }
     throw new ApiError(res.status, code, message);
   }
   return res.json() as Promise<T>;
 }
 
+export interface AuthUser {
+  id: string;
+  email: string;
+  created_at: string;
+}
+
+export interface BehavioralModelStatus {
+  trained: boolean;
+  min_tool_calls_required: number;
+  sessions: number;
+  tool_calls: number;
+  transitions: number;
+  tools: string[];
+  smoothing_k: number;
+  edges: { source: string; target: string; probability: number; observed_count: number }[];
+}
+
 export const api = {
+  signup: (email: string, password: string) =>
+    request<{ user: AuthUser }>("/api/auth/signup", { method: "POST", body: JSON.stringify({ email, password }) }),
+
+  login: (email: string, password: string) =>
+    request<{ user: AuthUser }>("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
+
+  logout: () => request<{ ok: boolean }>("/api/auth/logout", { method: "POST" }),
+
+  me: () => request<{ user: AuthUser }>("/api/auth/me"),
+
   health: () => request<{ status: string; groq_configured: boolean }>("/health"),
 
   createSession: (label: string) =>
@@ -94,4 +137,6 @@ export const api = {
     ),
 
   getFixtures: () => request<{ fixtures: any[] }>("/api/fixtures"),
+
+  getBehavioralModel: () => request<BehavioralModelStatus>("/api/behavioral-model"),
 };

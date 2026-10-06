@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     #   memory — in-memory mocks only; for pytest / machines without Docker
     sandbox_mode: Literal["docker", "memory"] = "docker"
 
+    # Login (app/auth/). Empty jwt_secret -> random per-process secret.
+    jwt_secret: str = ""
+    jwt_expire_hours: int = 8
+    cookie_secure: bool = False
+
     @property
     def groq_enabled(self) -> bool:
         return bool(self.groq_api_key) and self.groq_api_key != "gsk_your_key_here"

@@ -1,40 +1,30 @@
 """
-Behavioral Anomaly Module — report §4.3 (simplified).
+Behavioral Anomaly Module — report §4.3.
 
-Full spec calls for a learned graph model of "normal" agent action sequences.
-For a student-scale deployment we implement a *deterministic* stand-in that
-still demonstrates the concept end-to-end:
+Two checks on every tool call:
 
-- Each session keeps a rolling sequence of recent tool/action names.
-- We maintain a small "expected transition" graph (which action typically
-  follows which) seeded with sane defaults for the sandbox's tool set.
-- `path_deviation = 1 - (observed_transition_frequency)` — an action that
-  almost never follows the previous one scores high.
-- A session that fires an unusually long chain of *distinct* sensitive
-  actions in a short window also raises the score (covers "multi-step
-  exfiltration chains" from §8's fixtures).
+1. Path deviation (trained model, app/detection/behavioral_graph.py): how
+   unlikely is this tool call given the previous one in the same session,
+   according to transition probabilities LEARNED from this deployment's own
+   allowed history? deviation = 1 - learned probability; above
+   DEVIATION_THRESHOLD it counts as an anomaly. Skipped while the model is
+   not trained yet (too little history) — the result says so.
 
-This is documented in docs/SCOPE_DECISIONS.md as a simplification of the
-full graph-learning approach described in the research proposal.
+2. Multi-step exfiltration chain (RiskChain rule): 3+ distinct sensitive
+   actions within the last few tool calls of a session.
 """
 from collections import defaultdict
 
-from app.detection.base import extract_text
+from app.detection.behavioral_graph import behavioral_model
 from app.schemas import DetectionResult, Evidence, InterceptedEvent
 
 SENSITIVE_ACTIONS = {"send_email", "run_shell", "fetch_url", "query_db", "file_write"}
+DEVIATION_THRESHOLD = 0.7
+CHAIN_WINDOW = 5
+CHAIN_MIN_DISTINCT = 3
+CHAIN_SCORE = 0.65
 
-# naive prior: action -> {next_action: expected_frequency}
-EXPECTED_TRANSITIONS: dict[str, dict[str, float]] = {
-    "file_read": {"file_write": 0.4, "query_db": 0.2, "fetch_url": 0.2, "send_email": 0.1},
-    "query_db": {"file_write": 0.3, "send_email": 0.2, "fetch_url": 0.2},
-    "fetch_url": {"file_write": 0.3, "query_db": 0.1, "send_email": 0.2},
-    "file_write": {"send_email": 0.2, "run_shell": 0.1},
-    "run_shell": {"send_email": 0.1, "fetch_url": 0.2},
-    "send_email": {},
-}
-
-# session_id -> list of action names, most recent last
+# session_id -> list of tool names, most recent last
 _session_history: dict[str, list[str]] = defaultdict(list)
 
 
@@ -47,38 +37,45 @@ class BehavioralAnomalyDetector:
 
         action = event.payload.get("tool_name", "unknown")
         history = _session_history[event.session_id]
+        prev = history[-1] if history else None
+        model = behavioral_model.model
 
         evidence: list[Evidence] = []
         score = 0.0
+        metadata: dict = {"model_trained": model.trained, "history_length": len(history) + 1}
 
-        if history:
-            prev = history[-1]
-            expected = EXPECTED_TRANSITIONS.get(prev, {})
-            freq = expected.get(action, 0.02)  # unseen transition = rare
-            deviation = 1.0 - freq
-            if deviation > 0.7:
+        # 1. Path deviation from the trained model
+        if model.trained:
+            deviation, probability, why = model.path_deviation(prev, action)
+            metadata.update({"path_deviation": round(deviation, 4), "transition_probability": round(probability, 4), "basis": why["basis"]})
+            if deviation > DEVIATION_THRESHOLD:
                 score = max(score, deviation)
                 evidence.append(
                     Evidence(
                         detector=self.name,
                         label="path_deviation",
-                        detail=f"'{prev}' -> '{action}' is an unusual transition for this agent (freq={freq:.2f})",
+                        detail=f"unusual for this agent: {why['detail']} (deviation {deviation:.2f})",
                         weight=0.7,
                     )
                 )
+        else:
+            metadata["note"] = (
+                "behavioral model not trained yet — needs at least "
+                f"{model.describe()['min_tool_calls_required']} allowed tool calls of history; "
+                "only the exfiltration-chain rule ran"
+            )
 
-        # multi-step exfiltration chain heuristic: 3+ distinct sensitive
-        # actions within the last 5 tool calls of this session
-        recent_sensitive = [a for a in (history[-5:] + [action]) if a in SENSITIVE_ACTIONS]
-        if len(set(recent_sensitive)) >= 3:
-            score = max(score, 0.65)
+        # 2. Multi-step exfiltration chain
+        recent_sensitive = {a for a in (history[-CHAIN_WINDOW:] + [action]) if a in SENSITIVE_ACTIONS}
+        if len(recent_sensitive) >= CHAIN_MIN_DISTINCT:
+            score = max(score, CHAIN_SCORE)
             evidence.append(
                 Evidence(
                     detector=self.name,
                     label="exfiltration_chain",
                     detail=(
-                        f"session chained {len(set(recent_sensitive))} distinct sensitive "
-                        f"actions in a short window: {sorted(set(recent_sensitive))}"
+                        f"session chained {len(recent_sensitive)} distinct sensitive "
+                        f"actions in a short window: {sorted(recent_sensitive)}"
                     ),
                     weight=0.8,
                 )
@@ -93,7 +90,7 @@ class BehavioralAnomalyDetector:
             score=score,
             triggered=score >= 0.5,
             evidence=evidence,
-            metadata={"history_length": len(history)},
+            metadata=metadata,
         )
 
 

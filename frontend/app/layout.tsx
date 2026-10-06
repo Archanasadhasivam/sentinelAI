@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Nav } from "@/components/Nav";
+import { AppShell } from "@/components/AppShell";
 
 export const metadata: Metadata = {
   title: "SentinelAI",
@@ -11,10 +11,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <Nav />
-        <main className="pl-[76px] md:pl-[152px]">
-          <div className="mx-auto max-w-6xl px-5 md:px-8 py-8">{children}</div>
-        </main>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

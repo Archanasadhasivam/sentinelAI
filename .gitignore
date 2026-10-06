@@ -28,3 +28,8 @@ backend/**/_trainer_checkpoints/
 venv/
 .vscode/
 .git-backup/
+# Frontend test output (item 6)
+frontend/.next-e2e/
+frontend/test-results/
+frontend/playwright-report/
+frontend/tsconfig.tsbuildinfo

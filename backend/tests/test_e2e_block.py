@@ -4,10 +4,17 @@ from httpx import ASGITransport, AsyncClient
 from app.main import app
 
 
+async def _login(client: AsyncClient, email: str) -> None:
+    """Every API route needs login now (item 5), so each test signs up first."""
+    resp = await client.post("/api/auth/signup", json={"email": email, "password": "test-password-123"})
+    assert resp.status_code == 200, resp.text
+
+
 @pytest.mark.asyncio
 async def test_crafted_injection_produces_block_verdict():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await _login(client, "e2e-block@example.com")
         session_resp = await client.post("/api/sandbox/session", json={"label": "e2e-test"})
         assert session_resp.status_code == 200
         session_id = session_resp.json()["id"]
@@ -30,6 +37,7 @@ async def test_crafted_injection_produces_block_verdict():
 async def test_benign_message_is_allowed():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await _login(client, "e2e-benign@example.com")
         session_resp = await client.post("/api/sandbox/session", json={"label": "e2e-benign"})
         session_id = session_resp.json()["id"]
 

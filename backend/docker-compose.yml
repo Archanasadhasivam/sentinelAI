@@ -1,0 +1,37 @@
+# Alert pipeline (item 4): Redis broker + Celery worker that delivers alerts
+# to the SIEM webhook. Run from the backend/ folder:
+#
+#   docker compose up -d --build     # start (first time builds the worker)
+#   docker compose logs -f worker    # watch deliveries
+#   docker compose down              # stop
+#
+# SIEM_WEBHOOK_URL / SIEM_WEBHOOK_SECRET are read from backend/.env.
+# A SIEM running on your own PC is reachable from the worker as
+# http://host.docker.internal:<port>/... (not localhost).
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      ALERT_QUEUE_MODE: celery
+      SIEM_WEBHOOK_URL: ${SIEM_WEBHOOK_URL:-}
+      SIEM_WEBHOOK_SECRET: ${SIEM_WEBHOOK_SECRET:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped

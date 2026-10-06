@@ -89,3 +89,13 @@ class AlertRow(Base):
     message: Mapped[str] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     acknowledged: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class User(Base):
+    """Login accounts (item 5). Passwords are stored only as bcrypt hashes."""
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    email: Mapped[str] = mapped_column(String, unique=True, index=True)
+    password_hash: Mapped[str] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)

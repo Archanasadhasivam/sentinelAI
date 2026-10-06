@@ -24,12 +24,11 @@ mock tools, the full REST API + WebSocket stream, and all 8 frontend pages
 Settings).
 
 ## Known gaps / good next steps
-1. **No auth flow wired up.** `DEMO_USERNAME`/`DEMO_PASSWORD`/`SESSION_SECRET`
-   exist in backend config as placeholders; nothing currently checks them.
-   Add a login page + a dependency that gates the API routes.
-2. **No automated frontend tests.** Correctness was verified via typecheck +
-   manual smoke test, not Vitest/Playwright. Would be the highest-value
-   addition if this goes further.
+1. ~~No auth flow wired up.~~ **Done (item 5):** sign-up/login with
+   bcrypt-hashed passwords and a JWT in an httpOnly cookie; the whole API
+   and WebSocket require login. Set `JWT_SECRET` in `backend/.env`.
+2. ~~No automated frontend tests.~~ **Done (item 6):** `npm test` (Vitest)
+   and `npm run test:e2e` (Playwright, against the real backend).
 3. **In-memory sandbox/agent conversation state** (`app/sandbox/agent.py`'s
    `_conversations` dict, `app/sandbox/tools.py`'s `_sandbox_state` dict)
    resets on backend restart. Fine for a demo; would need to move to the DB
@@ -37,13 +36,18 @@ Settings).
 4. **Injection pattern bank is a ~25-pattern seed**, not the full 400+
    envisioned in the spec. Easy to extend — see
    `app/detection/data/injection_patterns.json`.
+4b. ~~Behavioral anomaly used a hand-typed transition table.~~ **Done
+   (item 2):** the backend now learns transition probabilities from its own
+   allowed tool-call history at every startup
+   (`app/detection/behavioral_graph.py`); status at `GET
+   /api/behavioral-model` and on the Policy page.
 5. ~~No real containerized sandboxing.~~ **Done:** every session now gets
    its own isolated Docker container (`app/sandbox/container_manager.py`,
    `SANDBOX_MODE=docker`). Requires Docker Desktop running; set
    `SANDBOX_MODE=memory` to run without it.
-6. **Single-process deployment assumption.** The event bus is an in-process
-   `asyncio.Queue`; horizontal scaling would need a real broker (Redis/Celery,
-   as the original spec allowed for).
+6. **Alerts now go through Celery + Redis to a SIEM webhook (item 4)**,
+   but the live WebSocket bus is still an in-process `asyncio.Queue`, so
+   the API itself is still single-process.
 
 ## How to verify it still works
 ```bash
@@ -54,6 +58,8 @@ SENTINELAI_DOCKER_TESTS=1 python -m pytest tests/test_session_isolation.py -v
 uvicorn app.main:app --reload --port 8000   # in one terminal
 
 # Frontend
+cd frontend && npm test            # unit tests (Vitest)
+cd frontend && npm run test:e2e    # end-to-end (Playwright; first: npx playwright install chromium)
 cd frontend && npm run dev                   # in another terminal
 # visit http://localhost:3000/playground and try an attack preset
 ```

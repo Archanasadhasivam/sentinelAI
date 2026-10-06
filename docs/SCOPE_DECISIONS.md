@@ -19,17 +19,41 @@ inline in the code near where it matters, too.
   transitions, red dashed = flagged by the behavioral anomaly detector) but
   isn't draggable/zoomable. Good enough to *see* a deviating chain; not a
   general graph-exploration tool.
-- **No Vitest / Playwright suite.** Frontend correctness was checked via
-  `next build` (full TypeScript typecheck across every page) and manual
-  end-to-end smoke testing against the real running backend. Backend logic —
-  where the actual security decisions happen — has 30 passing pytest tests.
+- **Frontend tests: Vitest + Playwright** (item 6). Vitest + Testing
+  Library unit-test `Badge`, `RiskGauge`, `TrustReportCard` and `lib/api.ts`
+  (`frontend/tests/unit/`, run with `npm test`). Playwright (`frontend/e2e/`,
+  run with `npm run test:e2e`) starts its own real backend (memory sandbox,
+  no Groq, eager alert queue, throwaway DB) and frontend on ports 8100/3100
+  and tests login redirects, sign-up/log-in/log-out, and an attack preset
+  being blocked and alerted. `lib/ws.ts` has no unit tests — it's covered by
+  the E2E run. Tests run locally only; no GitHub Actions workflow yet.
 
 ## Backend
-- **Celery/Redis → in-process `asyncio.Queue` bus** (`app/event_bus.py`).
-  The spec's own §3.1 offers this as the lightweight option; there's exactly
-  one backend process in this deployment, so a broker adds ops overhead with
-  no benefit yet. `bus.publish()` is the only integration point if this ever
-  needs to move to a real broker.
+- **Behavioral anomaly: trained graph model, learned from the app's own
+  history** (item 2, `app/detection/behavioral_graph.py`). A networkx
+  first-order Markov transition graph over tool calls (plus a
+  `session_start` node). Edge probabilities are counted from this
+  deployment's past **Allowed** tool calls in the database (Blocked/held
+  calls are excluded so attacks aren't learned as normal), with Laplace
+  smoothing (k = 0.5), and retrained every time the backend starts.
+  deviation = 1 − probability; above 0.7 it counts as an anomaly. Until
+  there are 20 allowed tool calls the model reports "not trained" and only
+  the exfiltration-chain rule (3+ distinct sensitive tools in the last 5
+  calls) runs. Training data only accumulates when a Groq key is set,
+  because the degraded-mode agent makes no tool calls. The Streamlit
+  demo's root `behavioral_graph.py` is a separate model and was not changed.
+- **Alert pipeline: Celery + Redis + signed SIEM webhook** (item 4,
+  `app/alerting/`). The backend still saves each alert and pushes it to the
+  dashboard over the in-process `asyncio.Queue` bus (`app/event_bus.py`) —
+  so the UI stays instant and works even if Redis or the SIEM is down — and
+  then queues it for a Celery worker, which POSTs it to `SIEM_WEBHOOK_URL`
+  signed with HMAC-SHA256 (`X-SentinelAI-Timestamp` +
+  `X-SentinelAI-Signature`). Network errors, 5xx and 429 are retried up to
+  5 times with exponential backoff; 4xx is logged and not retried. Redis and
+  the worker run in Docker (`backend/docker-compose.yml`) because Celery
+  doesn't officially support Windows. If Redis is down the alert is still
+  saved and shown; only SIEM delivery is skipped, with a warning. The live
+  WebSocket bus itself is still single-process.
 - **Session isolation is a real per-session Docker container**
   (`app/sandbox/container_manager.py`). Each session's container is created
   with the session and runs with `--network none` (no network at all), a
@@ -58,9 +82,12 @@ inline in the code near where it matters, too.
   `app/policy/policies.yaml`. A single weaker signal correctly lands in Wait
   until the semantic layer or a human confirms it; this is the intended
   layered behavior, not a bug.
-- **Auth is a single demo user, not full RBAC.** `DEMO_USERNAME`/`DEMO_PASSWORD`
-  in `.env` exist as placeholders for a real auth layer; no login flow is
-  wired into the frontend yet (see PROJECT_STATE.md).
+- **Login: users table + sign-up, no roles** (item 5, `app/auth/`).
+  Anyone can sign up; passwords are bcrypt-hashed (min 8 chars); login
+  issues an HS256 JWT (8 h) in an httpOnly, SameSite=Lax cookie. Every API
+  route and the WebSocket require login except `/health` and `/api/auth/*`.
+  All logged-in users see the same data — there is no RBAC or per-user
+  data separation, and no password reset or email verification.
 
 ## What was *not* simplified
 - The four-layer pipeline (Interception → Detection → Policy/Risk →
