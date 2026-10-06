@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -8,7 +10,8 @@ from app.database import get_db
 from app.enforcement.session_isolation import reset_session
 from app.models import AgentSession, DetectionResultRow, Event, VerdictRow
 from app.sandbox.agent import handle_message
-from app.sandbox.tools import reset_state
+from app.sandbox.container_manager import SandboxUnavailable
+from app.sandbox.tools import create_sandbox, reset_sandbox
 
 router = APIRouter(prefix="/api/sandbox", tags=["sandbox"])
 
@@ -27,6 +30,15 @@ async def create_session(body: CreateSessionBody, db: AsyncSession = Depends(get
     db.add(session)
     await db.commit()
     await db.refresh(session)
+
+    # Session isolation: spin up this session's own container now.
+    try:
+        await asyncio.to_thread(create_sandbox, session.id)
+    except SandboxUnavailable as exc:
+        await db.delete(session)
+        await db.commit()
+        raise api_error(503, "sandbox_unavailable", str(exc))
+
     return {"id": session.id, "label": session.label, "created_at": session.created_at.isoformat()}
 
 
@@ -45,7 +57,10 @@ async def reset_sandbox_session(session_id: str, db: AsyncSession = Depends(get_
     row = await db.get(AgentSession, session_id)
     if row is None:
         raise api_error(404, "session_not_found", f"no sandbox session with id {session_id}")
-    reset_state(session_id)
+    try:
+        await asyncio.to_thread(reset_sandbox, session_id)
+    except SandboxUnavailable as exc:
+        raise api_error(503, "sandbox_unavailable", str(exc))
     reset_session(session_id)
     return {"ok": True}
 

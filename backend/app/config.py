@@ -4,6 +4,8 @@ app if GROQ_API_KEY is missing — modules that need it must check
 `settings.groq_enabled` and degrade gracefully (see §7.5 of the build spec).
 """
 from functools import lru_cache
+from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -23,6 +25,11 @@ class Settings(BaseSettings):
     # default: no checkpoint ships with this repo, see backend/models/README.md.
     xlmr_model_path: str = "models/xlmr-prompt-injection"
     xlmr_confidence_threshold: float = 0.5
+
+    # Session isolation (app/sandbox/container_manager.py).
+    #   docker — each session gets its own isolated container (default)
+    #   memory — in-memory mocks only; for pytest / machines without Docker
+    sandbox_mode: Literal["docker", "memory"] = "docker"
 
     @property
     def groq_enabled(self) -> bool:

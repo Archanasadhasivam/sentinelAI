@@ -37,11 +37,10 @@ Settings).
 4. **Injection pattern bank is a ~25-pattern seed**, not the full 400+
    envisioned in the spec. Easy to extend — see
    `app/detection/data/injection_patterns.json`.
-5. **No real containerized sandboxing.** All 6 tools are pure-Python mocks
-   with no actual filesystem/network/shell access to isolate in the first
-   place. If real tool execution is ever added, session isolation needs to
-   become an actual sandbox (e.g. per-session Docker container or gVisor),
-   not just a per-session in-memory dict.
+5. ~~No real containerized sandboxing.~~ **Done:** every session now gets
+   its own isolated Docker container (`app/sandbox/container_manager.py`,
+   `SANDBOX_MODE=docker`). Requires Docker Desktop running; set
+   `SANDBOX_MODE=memory` to run without it.
 6. **Single-process deployment assumption.** The event bus is an in-process
    `asyncio.Queue`; horizontal scaling would need a real broker (Redis/Celery,
    as the original spec allowed for).
@@ -50,6 +49,8 @@ Settings).
 ```bash
 # Backend
 cd backend && source .venv/bin/activate && python -m pytest tests/ -q
+# Real-container isolation tests (needs Docker Desktop running):
+SENTINELAI_DOCKER_TESTS=1 python -m pytest tests/test_session_isolation.py -v
 uvicorn app.main:app --reload --port 8000   # in one terminal
 
 # Frontend

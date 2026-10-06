@@ -1,14 +1,23 @@
 """
-Session Isolation — report §4.7 (simplified).
+Session Isolation — report §4.7.
 
-The real proposal describes container/network-level isolation
-(Docker/iptables) per agent session. For a student-scale local demo there is
-no real container boundary to enforce, so this module tracks *logical*
-isolation state instead: a session that racks up repeated Block verdicts
-gets flagged "isolated" and further tool calls are refused outright until a
-human resets it from the UI. This is a documented scope simplification
-(see docs/SCOPE_DECISIONS.md) — swapping in real container isolation would
-plug in here without touching the rest of the pipeline.
+Two parts work together:
+
+1. Containment (app/sandbox/container_manager.py): every session runs its
+   run_shell/file_read/file_write tools inside its own Docker container with
+   no network (network_mode="none"), a read-only root filesystem, a writable
+   /workspace only, all capabilities dropped, a non-root user, and CPU /
+   memory / process limits. A session can never see another session's files
+   or reach the network, whatever the agent is tricked into running.
+
+2. Quarantine (this module): a session that racks up ISOLATION_THRESHOLD
+   consecutive Block verdicts is flagged "isolated", and every further tool
+   call is refused by action_enforcer.py until a human presses Reset. The
+   container is deliberately left running while isolated, so its state can
+   still be inspected; Reset destroys it and creates a fresh one.
+
+With SANDBOX_MODE=memory (pytest / no Docker) part 1 falls back to
+per-session in-memory mocks; part 2 behaves identically in both modes.
 """
 from dataclasses import dataclass, field
 

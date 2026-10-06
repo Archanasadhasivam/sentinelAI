@@ -3,6 +3,7 @@ SentinelAI backend entrypoint.
 
 Run with: uvicorn app.main:app --reload --port 8000  (from backend/)
 """
+import asyncio
 import sys
 from contextlib import asynccontextmanager
 
@@ -13,6 +14,7 @@ from fastapi.responses import JSONResponse
 from app.api import routes_alerts, routes_events, routes_graph, routes_policy, routes_reports, routes_sandbox, routes_settings, ws
 from app.config import get_settings
 from app.database import init_db
+from app.sandbox.container_manager import SandboxUnavailable, container_manager
 
 settings = get_settings()
 
@@ -29,7 +31,25 @@ async def lifespan(app: FastAPI):
             file=sys.stderr,
         )
     await init_db()
+    if settings.sandbox_mode == "docker":
+        if await asyncio.to_thread(container_manager.is_available):
+            print("[SentinelAI] Session isolation: Docker sandbox mode (one container per session, no network).", file=sys.stderr)
+        else:
+            print(
+                "[SentinelAI] WARNING: SANDBOX_MODE=docker but Docker is not reachable. "
+                "Creating sandbox sessions will fail with 503 until Docker Desktop is running "
+                "(or set SANDBOX_MODE=memory in backend/.env).",
+                file=sys.stderr,
+            )
+    else:
+        print("[SentinelAI] Session isolation: in-memory mode (SANDBOX_MODE=memory) — no containers.", file=sys.stderr)
     yield
+    if settings.sandbox_mode == "docker":
+        try:
+            removed = await asyncio.to_thread(container_manager.remove_all)
+            print(f"[SentinelAI] Removed {removed} sandbox container(s).", file=sys.stderr)
+        except SandboxUnavailable:
+            pass
 
 
 app = FastAPI(title="SentinelAI", version="0.1.0", lifespan=lifespan)
@@ -67,7 +87,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "groq_configured": settings.groq_enabled}
+    return {"status": "ok", "groq_configured": settings.groq_enabled, "sandbox_mode": settings.sandbox_mode}
 
 
 app.include_router(routes_sandbox.router)

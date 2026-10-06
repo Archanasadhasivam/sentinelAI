@@ -23,3 +23,8 @@ frontend/.env.local
 backend/models/
 backend/injection_dataset.csv
 backend/**/_trainer_checkpoints/
+
+# Local environments / editor settings
+venv/
+.vscode/
+.git-backup/

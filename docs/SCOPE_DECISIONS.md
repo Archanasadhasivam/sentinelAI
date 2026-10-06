@@ -30,13 +30,20 @@ inline in the code near where it matters, too.
   one backend process in this deployment, so a broker adds ops overhead with
   no benefit yet. `bus.publish()` is the only integration point if this ever
   needs to move to a real broker.
-- **Session isolation is per-session in-memory state, not OS-level sandboxing**
-  (`app/sandbox/tools.py`, `app/enforcement/session_isolation.py`). Tools are
-  mocked (no real filesystem/network/shell access exists to isolate), so
-  "isolation" here means each session gets its own dict-backed mock
-  filesystem/mailbox/DB and its own behavioral-history/rate-limit counters —
-  enough to demonstrate the *policy* of isolation without a container
-  runtime to actually enforce it against real resources.
+- **Session isolation is a real per-session Docker container**
+  (`app/sandbox/container_manager.py`). Each session's container is created
+  with the session and runs with `--network none` (no network at all), a
+  read-only root filesystem with a writable `/workspace` only, all
+  capabilities dropped, `no-new-privileges`, a non-root user, and
+  256 MB / 0.5 CPU / 64-process limits. `run_shell`, `file_read` and
+  `file_write` execute inside it (10 s timeout, ~4 KB output cap, paths
+  confined to `/workspace`); `send_email`, `query_db` and `fetch_url` stay
+  mocked. `--network none` was chosen over host iptables rules because the
+  demo runs on Docker Desktop for Windows, where host iptables isn't
+  available. After 3 consecutive Blocks the session is quarantined: the
+  container keeps running (for inspection) but every tool call is refused
+  until Reset, which destroys and recreates it. `SANDBOX_MODE=memory` keeps
+  the old in-memory mocks for pytest and machines without Docker.
 - **Injection pattern bank has ~25 seed patterns, not 400+.** Organized into
   the same categories the spec calls for (role-override, system-prompt
   exfiltration, obfuscation/encoding, tool-abuse, Hinglish variants), with

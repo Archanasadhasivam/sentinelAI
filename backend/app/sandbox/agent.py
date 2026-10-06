@@ -9,7 +9,8 @@ Flow for one user message:
      calling enabled over the mock tools in `tools.py`.
   3. Every tool call the model wants to make is routed through
      `tool_call_interceptor` FIRST. Only if enforcement allows it do we
-     actually execute the mock tool. If the tool is send_email/fetch_url we
+     actually execute the tool (inside the session's container for
+     run_shell/file_read/file_write in docker mode — see container_manager.py). If the tool is send_email/fetch_url we
      also raise a matching `api_request` event.
   4. Any text a tool returns that came from an untrusted source (a "fetched"
      page, a "read" file) is re-injected into the pipeline as a `prompt`
@@ -25,6 +26,7 @@ full on every user message (so the demo's core security behavior still
 works), but the "brain" just returns a canned notice instead of doing
 real reasoning or tool use — this is called out explicitly in the UI.
 """
+import asyncio
 import json
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -67,7 +69,9 @@ async def _run_tool_call(db: AsyncSession, session_id: str, tool_name: str, argu
     if impl is None:
         return f"ERROR: unknown tool {tool_name}"
 
-    tool_output = impl(session_id, **arguments)
+    # Blocking in docker mode (exec into the session's container), so keep it
+    # off the event loop.
+    tool_output = await asyncio.to_thread(impl, session_id, **arguments)
 
     # Outbound-shaped tools also raise a matching api_request event so the
     # allowlist/RiskChain detector sees them.
